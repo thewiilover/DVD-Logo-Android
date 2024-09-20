@@ -1,0 +1,35 @@
+// build.gradle (Module: app)
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    compileSdkVersion 33 // Use the latest stable version available
+
+    defaultConfig {
+        applicationId "com.example.dvdlogo"
+        minSdkVersion 21 // Minimum supported Android version
+        targetSdkVersion 33 // Target Android version
+        versionCode 1
+        versionName "1.0"
+
+        // Enable Java 8 features
+        compileOptions {
+            sourceCompatibility JavaVersion.VERSION_1_8
+            targetCompatibility JavaVersion.VERSION_1_8
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'com.google.android.material:material:1.9.0'
+}
