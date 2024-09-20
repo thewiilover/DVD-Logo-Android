@@ -10,58 +10,41 @@ on:
 
 jobs:
   build:
-    name: Build Android App
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        api-level: [30]
-        target: [default]
-        arch: [x86_64]
-
     steps:
-      # Check out the code from the repository
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Set up JDK (Java Development Kit)
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: 11 # Use the Java version specified in your build.gradle
+          java-version: 11
 
-      # Set up Android SDK
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v2
+      - name: Cache Gradle wrapper
+        uses: actions/cache@v3
         with:
-          api-level: ${{ matrix.api-level }}
-          target: ${{ matrix.target }}
-          arch: ${{ matrix.arch }}
-          ndk: '21.4.7075529' # Optional, only if you need the NDK
+          path: ~/.gradle/wrapper
+          key: gradle-wrapper-${{ runner.os }}-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-wrapper-${{ runner.os }}-
 
-      # Grant execute permissions for Gradle wrapper
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.gradle/caches
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      # Grant execute permissions for the Gradle wrapper script
       - name: Grant execute permission for Gradle
         run: chmod +x ./gradlew
 
       # Build the project using Gradle
       - name: Build with Gradle
         run: ./gradlew build
-
-      - name: Cache Gradle wrapper
-        uses: actions/cache@v3
-        with:
-              path: ~/.gradle/wrapper # Caches the Gradle distribution binaries
-              key: gradle-wrapper-${{ runner.os }}-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}
-              restore-keys: |
-                gradle-wrapper-${{ runner.os }}-
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v3
-        with:
-              path: ~/.gradle/caches # Caches Gradle dependencies
-              key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-              restore-keys: |
-                gradle-${{ runner.os }}-
 
       # Upload the build outputs as artifacts
       - name: Upload APK
