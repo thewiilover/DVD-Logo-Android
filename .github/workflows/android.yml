@@ -48,9 +48,24 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build
 
+      - name: Cache Gradle wrapper
+        uses: actions/cache@v3
+        with:
+              path: ~/.gradle/wrapper # Caches the Gradle distribution binaries
+              key: gradle-wrapper-${{ runner.os }}-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}
+              restore-keys: |
+                gradle-wrapper-${{ runner.os }}-
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v3
+        with:
+              path: ~/.gradle/caches # Caches Gradle dependencies
+              key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+              restore-keys: |
+                gradle-${{ runner.os }}-
+
       # Upload the build outputs as artifacts
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
           name: app-debug
-          path: app/build/outputs/apk/*
+          path: app/build/outputs/*
