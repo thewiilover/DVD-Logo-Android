@@ -1,84 +1,123 @@
 package com.example.dvdlogo;
 
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
+import android.view.KeyEvent;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.ImageView;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class MainActivity extends AppCompatActivity {
-    private CustomView customView;
-    private boolean isPartyMode = false;
+
+    private static final int PICK_IMAGE_REQUEST = 1;
+    private static final int PICK_AUDIO_REQUEST = 2;
+
+    private ImageView imageView;
     private MediaPlayer mediaPlayer;
+    private boolean isFullscreen = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        customView = new CustomView(this);
-        setContentView(customView);
+        setContentView(R.layout.activity_main);
 
-        // Check if Party Mode is enabled via Intent extra (equivalent of command-line flag)
-        isPartyMode = getIntent().getBooleanExtra("PARTY_MODE", false);
+        imageView = findViewById(R.id.imageView);
+        Button uploadImageButton = findViewById(R.id.uploadImageButton);
+        Button uploadAudioButton = findViewById(R.id.uploadAudioButton);
 
-        if (isPartyMode) {
-            playAudioLoop();
-            customView.setPartyMode(true); // Enable faster movement in Party Mode
-        }
+        // Fullscreen toggle
+        findViewById(R.id.imageView).setOnClickListener(v -> toggleFullscreen());
+
+        // Image upload
+        uploadImageButton.setOnClickListener(v -> openImagePicker());
+
+        // Audio upload
+        uploadAudioButton.setOnClickListener(v -> openAudioPicker());
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, menu);
-        return true;
+    // Open image picker
+    private void openImagePicker() {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("image/*");
+        startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE_REQUEST);
     }
 
+    // Open audio picker
+    private void openAudioPicker() {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("audio/*");
+        startActivityForResult(Intent.createChooser(intent, "Select Audio"), PICK_AUDIO_REQUEST);
+    }
+
+    // Handle result of image and audio pickers
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.upload_image:
-                // Implement image upload
-                return true;
-            case R.id.upload_audio:
-                // Implement audio upload
-                return true;
-            case R.id.toggle_fullscreen:
-                // Implement fullscreen toggle
-                return true;
-            case R.id.toggle_party_mode:
-                isPartyMode = !isPartyMode;
-                customView.setPartyMode(isPartyMode);
-                if (isPartyMode) {
-                    playAudioLoop();
-                } else {
-                    stopAudio();
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (resultCode == RESULT_OK && data != null) {
+            Uri selectedFileUri = data.getData();
+
+            if (requestCode == PICK_IMAGE_REQUEST) {
+                // Handle image selection
+                try {
+                    InputStream inputStream = getContentResolver().openInputStream(selectedFileUri);
+                    Bitmap selectedImage = BitmapFactory.decodeStream(inputStream);
+                    imageView.setImageBitmap(selectedImage);
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+            } else if (requestCode == PICK_AUDIO_REQUEST) {
+                // Handle audio selection
+                if (mediaPlayer != null) {
+                    mediaPlayer.release();
+                }
+                mediaPlayer = MediaPlayer.create(this, selectedFileUri);
+                mediaPlayer.setLooping(true);
+                mediaPlayer.start();
+            }
         }
     }
 
-    private void playAudioLoop() {
-        if (mediaPlayer == null) {
-            mediaPlayer = MediaPlayer.create(this, R.raw.default_party_mode); // Replace with default audio file
-            mediaPlayer.setLooping(true);
-            mediaPlayer.start();
+    // Toggle fullscreen
+    private void toggleFullscreen() {
+        if (isFullscreen) {
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+            isFullscreen = false;
+        } else {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_IMMERSIVE
+                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_FULLSCREEN);
+            isFullscreen = true;
         }
     }
 
-    private void stopAudio() {
-        if (mediaPlayer != null) {
-            mediaPlayer.stop();
-            mediaPlayer.release();
-            mediaPlayer = null;
+    // Handle F11 key for fullscreen toggle
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_F11) {
+            toggleFullscreen();
+            return true;
         }
+        return super.onKeyDown(keyCode, event);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        stopAudio();
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+        }
     }
 }

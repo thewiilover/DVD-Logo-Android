@@ -4,12 +4,13 @@ plugins {
 }
 
 android {
+    namespace 'com.example.dvdlogo'
     compileSdkVersion 33 // Use the latest stable version available
 
     defaultConfig {
         applicationId "com.example.dvdlogo"
-        minSdkVersion 21 // Minimum supported Android version
-        targetSdkVersion 33 // Target Android version
+        minSdk 21 // Minimum supported Android version
+        targetSdk 33 // Target Android version
         versionCode 1
         versionName "1.0"
 

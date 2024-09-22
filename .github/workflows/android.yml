@@ -44,7 +44,7 @@ jobs:
 
       # Build the project using Gradle
       - name: Build with Gradle
-        run: ./gradlew build
+        run: ./gradlew app:build
 
       # Upload the build outputs as artifacts
       - name: Upload APK
